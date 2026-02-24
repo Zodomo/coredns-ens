@@ -1,4 +1,4 @@
-module github.com/Zodomo/coredns-ens
+module github.com/wealdtech/coredns-ens
 
 go 1.25
 
