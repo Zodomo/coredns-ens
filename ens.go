@@ -10,16 +10,17 @@ import (
 	"time"
 
 	"github.com/coredns/coredns/plugin"
+	clog "github.com/coredns/coredns/plugin/pkg/log"
 	"github.com/coredns/coredns/request"
 	"github.com/ethereum/go-ethereum/ethclient"
-	lru "github.com/hashicorp/golang-lru"
-	"github.com/labstack/gommon/log"
+	lru "github.com/hashicorp/golang-lru/v2"
 	ens "github.com/wealdtech/go-ens/v3"
 
 	"github.com/miekg/dns"
 )
 
 var emptyContentHash = []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
+var log = clog.NewWithPlugin("ens")
 
 // ENS is a plugin that returns information held in the Ethereum Name Service.
 type ENS struct {
@@ -166,7 +167,7 @@ func (e ENS) handleTXT(name string, domain string, contentHash []byte) ([]dns.RR
 		ethDomain := strings.TrimSuffix(domain, ".")
 		resolver, err := e.getResolver(ethDomain)
 		if err != nil {
-			log.Warnf("error obtaining resolver for %s: %v", ethDomain, err)
+			log.Warningf("error obtaining resolver for %s: %v", ethDomain, err)
 			return results, nil
 		}
 
@@ -265,7 +266,7 @@ func (e ENS) handleAAAA(name string, domain string, contentHash []byte) ([]dns.R
 		for i := range e.IPFSGatewayAAAAs {
 			result, err := dns.NewRR(fmt.Sprintf("%s 3600 IN AAAA %s", name, e.IPFSGatewayAAAAs[i]))
 			if err != nil {
-				log.Warnf("error creating %s AAAA RR: %v", name, err)
+				log.Warningf("error creating %s AAAA RR: %v", name, err)
 			}
 			results = append(results, result)
 		}
@@ -355,12 +356,12 @@ func isRealOnChainDomain(name string, domain string) bool {
 	return name == domain
 }
 
-var resolverCache *lru.Cache
-var dnsResolverCache *lru.Cache
+var resolverCache *lru.Cache[string, *ens.Resolver]
+var dnsResolverCache *lru.Cache[string, *ens.DNSResolver]
 
 func init() {
-	resolverCache, _ = lru.New(16)
-	dnsResolverCache, _ = lru.New(16)
+	resolverCache, _ = lru.New[string, *ens.Resolver](16)
+	dnsResolverCache, _ = lru.New[string, *ens.DNSResolver](16)
 }
 
 func (e *ENS) getDNSResolver(domain string) (*ens.DNSResolver, error) {
@@ -379,7 +380,7 @@ func (e *ENS) getDNSResolver(domain string) (*ens.DNSResolver, error) {
 	if resolver == nil {
 		return nil, errors.New("no resolver")
 	}
-	return resolver.(*ens.DNSResolver), nil
+	return resolver, nil
 }
 
 func (e *ENS) newDNSResolver(domain string) (*ens.DNSResolver, error) {
@@ -407,7 +408,7 @@ func (e *ENS) getResolver(domain string) (*ens.Resolver, error) {
 	if resolver == nil {
 		return nil, errors.New("no resolver")
 	}
-	return resolver.(*ens.Resolver), nil
+	return resolver, nil
 }
 
 func (e *ENS) newResolver(domain string) (*ens.Resolver, error) {

@@ -1,19 +1,19 @@
-FROM ubuntu:latest
+FROM golang:1.25-bookworm AS builder
 
 RUN apt-get update && \
-    apt-get -uy upgrade && \
-    apt-get install -y ca-certificates software-properties-common gpg && \
-    add-apt-repository ppa:longsleep/golang-backports && \
-    apt-get update && \
-    update-ca-certificates
-RUN apt-get -y install ed git golang-go make
+    apt-get install -y --no-install-recommends ca-certificates ed git make && \
+    update-ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
 
 ADD . /coredns-ens/
-RUN chmod 755 coredns-ens/build.sh && coredns-ens/build.sh
+RUN chmod 755 /coredns-ens/build.sh && /coredns-ens/build.sh
 
-FROM ubuntu:latest
-COPY --from=0 /etc/ssl/certs /etc/ssl/certs
-COPY --from=0 /coredns /coredns
+FROM debian:bookworm-slim
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates && \
+    update-ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+COPY --from=builder /coredns /coredns
 
 EXPOSE 53 53/udp
 EXPOSE 853

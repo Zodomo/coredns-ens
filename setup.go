@@ -11,13 +11,10 @@ import (
 )
 
 func init() {
-	caddy.RegisterPlugin("ens", caddy.Plugin{
-		ServerType: "dns",
-		Action:     setupENS,
-	})
+	plugin.Register("ens", setup)
 }
 
-func setupENS(c *caddy.Controller) error {
+func setup(c *caddy.Controller) error {
 	connection, ethLinkNameServers, ipfsGatewayAs, ipfsGatewayAAAAs, err := ensParse(c)
 	if err != nil {
 		return plugin.Error("ens", err)

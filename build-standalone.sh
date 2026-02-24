@@ -10,13 +10,13 @@ echo "Cloning coredns repo..."
 git clone https://github.com/coredns/coredns.git
 
 cd coredns
-git checkout v1.8.3
+git checkout v1.14.1
 
 echo "Patching plugin config..."
 ed plugin.cfg <<EOED
 /rewrite:rewrite
 a
-ens:github.com/wealdtech/coredns-ens
+ens:github.com/Zodomo/coredns-ens
 .
 w
 q
@@ -26,18 +26,18 @@ EOED
 echo "Patching go modules..."
 ed go.mod <<EOED
 a
-replace github.com/wealdtech/coredns-ens => ../..
+replace github.com/Zodomo/coredns-ens => ../..
 .
 /^)
 -1
 a
-	github.com/wealdtech/coredns-ens v1.3.1
+	github.com/Zodomo/coredns-ens v0.0.0
 .
 w
 q
 EOED
 
-go get github.com/wealdtech/coredns-ens@v1.3.1
+go get github.com/Zodomo/coredns-ens
 go get
 go mod download
 
