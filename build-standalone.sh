@@ -37,6 +37,7 @@ w
 q
 EOED
 
+go generate coredns.go
 go get github.com/wealdtech/coredns-ens@v1.3.1
 go get
 go mod download
